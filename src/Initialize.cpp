@@ -38,7 +38,7 @@ int createDataBlocks(FILE* fd, int count) {
 int createDirecotries(FILE* fd, int sbSize, int iSize) {
     DiskInode rootDirInode;
     rootDirInode.d_mode = Inode::IFDIR;
-    rootDirInode.d_size = 2*sizeof(DirectoryEntry);
+    rootDirInode.d_size = 2*(DirectoryEntry::DIRSIZ+4);
     rootDirInode.d_addr[0] = 19;
 
     fseek(fd, sbSize+sizeof(DiskInode), SEEK_SET);
@@ -66,6 +66,7 @@ int main(int argc, char *argv[])
         printf("Error while create image file.");
         return 1;
     }
+    printf("Sizeof DirEntry %ld", sizeof(DirectoryEntry));
     createSuperBlock(imgFile, 80, 32000);
     createDiskInodes(imgFile, 80);
     createDataBlocks(imgFile, 32000);

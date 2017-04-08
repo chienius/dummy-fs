@@ -1,6 +1,7 @@
 #include "FileManager.h"
 #include "DummyKernel.h"
 #include "Utility.h"
+#include <cstdio>
 
 /*==========================class FileManager===============================*/
 void FileManager::Initialize()
@@ -186,11 +187,11 @@ void FileManager::Seek(int fd, int offset, int mode)
     }
 
     /* 管道文件不允许seek */
-    if ( pFile->f_flag & File::FPIPE )
-    {
-        u.u_error = 1;
-        return;
-    }
+    //if ( pFile->f_flag & File::FPIPE )
+    //{
+        //u.u_error = 1;
+        //return;
+    //}
 
     /* 如果u.u_arg[2]在3 ~ 5之间，那么长度单位由字节变为512字节 */
     if ( mode > 2 )
@@ -278,6 +279,73 @@ void FileManager::Rdwr(int fd, char* buffer, int count, enum File::FileFlags mod
 
     /* 返回实际读写的字节数，修改存放系统调用返回值的核心栈单元 */
     u.u_eax_ar0 = count - u.u_IOParam.m_Count;
+}
+
+void FileManager::Ls(char* path) {
+    Inode* pInode;
+    User& u = DummyKernel::Instance().GetUser();
+    u.u_dirp = path;
+    int dirEntryCount = 0;
+    BufferManager& bufMgr = DummyKernel::Instance().GetBufferManager();
+    Buf* pBuf;
+
+    pInode = this->NameI(FileManager::NextChar, FileManager::OPEN);
+    //if(NULL == pInode) {
+        //printf("[Path Not Found]");
+        //return;
+    //}
+
+
+    //[> 对于u.u_dbuf[]中的路径名分量，逐个搜寻匹配的目录项 <]
+    //u.u_IOParam.m_Offset = 0;
+    //[> 设置为目录项个数 ，含空白的目录项<]
+    //u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
+    //pBuf = NULL;
+    //while(true) {
+        //[> 对目录项已经搜索完毕 <]
+        //if ( 0 == u.u_IOParam.m_Count )
+        //{
+            //if ( NULL != pBuf )
+            //{
+                //bufMgr.Brelse(pBuf);
+            //}
+
+            //printf("%d entries in all.", dirEntryCount);
+            //break;
+        //}
+
+        //[> 已读完目录文件的当前盘块，需要读入下一目录项数据盘块 <]
+        //if ( 0 == u.u_IOParam.m_Offset % Inode::BLOCK_SIZE )
+        //{
+            //if ( NULL != pBuf )
+            //{
+                //bufMgr.Brelse(pBuf);
+            //}
+            //[> 计算要读的物理盘块号 <]
+            //int phyBlkno = pInode->Bmap(u.u_IOParam.m_Offset / Inode::BLOCK_SIZE );
+            //pBuf = bufMgr.Bread(pInode->i_dev, phyBlkno );
+        //}
+
+        //[> 没有读完当前目录项盘块，则读取下一目录项至u.u_dent <]
+        //int* src = (int *)(pBuf->b_addr + (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE));
+        //Utility::DWordCopy( src, (int *)&u.u_dent, sizeof(DirectoryEntry)/sizeof(int) );
+
+        //u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
+        //u.u_IOParam.m_Count--;
+
+        //[> 如果是空闲目录项，记录该项位于目录文件中偏移量 <]
+        //if ( 0 == u.u_dent.m_ino )
+        //{
+            //[> 跳过空闲目录项，继续搜索下一目录项 <]
+            //continue;
+        //}
+
+        //dirEntryCount++;
+        //printf("%s\t\t%d", u.u_dent.m_name, u.u_dent.m_ino);
+    //}
+
+    ////pInode->Prele();
+    //this->m_InodeTable->IPut(pInode);
 }
 
 /* 返回NULL表示目录搜索失败，否则是根指针，指向文件的内存打开i节点 ，上锁的内存i节点  */

@@ -3,7 +3,14 @@
 #include "BufferManager.h"
 #include "FileSystem.h"
 
+DummyKernel DummyKernel::instance;
+FileManager g_FileManager;
+
 DummyKernel::DummyKernel() {
+}
+
+DummyKernel& DummyKernel::Instance() {
+    return DummyKernel::instance;
 }
 
 void DummyKernel::Initialize(FILE* fd) {
@@ -15,6 +22,9 @@ void DummyKernel::Initialize(FILE* fd) {
 
     this->m_FileSystem = &g_FileSystem;
     this->m_FileSystem->Initialize();
+
+    this->m_FileManager = &g_FileManager;
+    this->m_FileManager->Initialize();
 }
 
 FileSystem& DummyKernel::GetFileSystem() {
@@ -27,4 +37,8 @@ User& DummyKernel::GetUser() {
 
 BufferManager& DummyKernel::GetBufferManager() {
     return *(this->m_BufferManager);
+}
+
+FileManager& DummyKernel::GetFileManager() {
+    return *(this->m_FileManager);
 }

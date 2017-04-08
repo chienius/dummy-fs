@@ -79,6 +79,8 @@ class FileManager
          */
         void Rdwr(int fd, char* buffer, int count, enum File::FileFlags mode );
 
+        void Ls(char* path);
+
         /* 
          * @comment 目录搜索，将路径转化为相应的Inode，
          * 返回上锁后的Inode

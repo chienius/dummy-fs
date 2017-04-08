@@ -4,6 +4,16 @@
 #include "DummyKernel.h"
 #include "BufferManager.h"
 
+Devtab::Devtab()
+{
+    this->d_active = 0;
+    this->d_errcnt = 0;
+    this->b_forw = NULL;
+    this->b_back = NULL;
+    this->d_actf = NULL;
+    this->d_actl = NULL;
+}
+
 BufferManager g_BufferManager;
 
 void BufferManager::Initialize(FILE* fd)
@@ -11,6 +21,9 @@ void BufferManager::Initialize(FILE* fd)
     this->imgFd = fd;
     int i;
     Buf* bp;
+
+    this->devtab.b_forw = (Buf *)&(this->devtab);
+    this->devtab.b_back = (Buf *)&(this->devtab);
 
     this->bFreeList.b_forw = this->bFreeList.b_back = &(this->bFreeList);
     this->bFreeList.av_forw = this->bFreeList.av_back = &(this->bFreeList);
@@ -43,11 +56,11 @@ loop:
     /* 首先在该设备队列中搜索是否有相应的缓存 */
     for(bp = dp->b_forw; bp != (Buf *)dp; bp = bp->b_forw)
     {
-        /* 不是要找的缓存，则继续 */
+        // 不是要找的缓存，则继续
         if(bp->b_blkno != blkno || bp->b_dev != dev)
             continue;
 
-        /* 从自由队列中抽取出来 */
+        // 从自由队列中抽取出来
         this->NotAvail(bp);
         return bp;
     }
@@ -125,6 +138,15 @@ Buf* BufferManager::Bread(short dev, int blkno)
      */
     fseek(this->imgFd, bp->b_blkno*BufferManager::BUFFER_SIZE, SEEK_SET);
     fread(bp->b_addr, sizeof(char), BufferManager::BUFFER_SIZE, imgFd);
+    if(this->devtab.d_actf == NULL)
+    {
+        this->devtab.d_actf = bp;
+    }
+    else
+    {
+        this->devtab.d_actl->av_forw = bp;
+    }
+    this->devtab.d_actl = bp;
     bp->b_flags |= Buf::B_DONE;
 
     return bp;
@@ -144,6 +166,15 @@ void BufferManager::Bwrite(Buf *bp)
      */
     fseek(this->imgFd, bp->b_blkno*512, SEEK_SET);
     fwrite(bp->b_addr, sizeof(char), BufferManager::BUFFER_SIZE, imgFd);
+    if(this->devtab.d_actf == NULL)
+    {
+        this->devtab.d_actf = bp;
+    }
+    else
+    {
+        this->devtab.d_actl->av_forw = bp;
+    }
+    this->devtab.d_actl = bp;
     bp->b_flags |= Buf::B_DONE;
 
     this->Brelse(bp);

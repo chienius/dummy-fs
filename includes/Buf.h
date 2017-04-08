@@ -6,6 +6,7 @@ class Buf;
 class Devtab
 {
     public:
+        Devtab();
         int	d_active;
         int	d_errcnt;
         Buf* b_forw;

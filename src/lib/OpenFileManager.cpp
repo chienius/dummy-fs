@@ -46,11 +46,11 @@ void OpenFileTable::CloseF(File *pFile)
     Inode* pNode;
 
     /* 管道类型 */
-    if(pFile->f_flag & File::FPIPE)
-    {
-        pNode = pFile->f_inode;
-        pNode->i_mode &= ~(Inode::IREAD | Inode::IWRITE);
-    }
+    //if(pFile->f_flag & File::FPIPE)
+    //{
+        //pNode = pFile->f_inode;
+        //pNode->i_mode &= ~(Inode::IREAD | Inode::IWRITE);
+    //}
 
     if(pFile->f_count <= 1)
     {

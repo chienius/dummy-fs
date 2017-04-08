@@ -225,16 +225,16 @@ int Inode::Bmap(int lbn)
             this->i_flag |= Inode::IUPD;
         }
         /* 找到预读块对应的物理盘块号 */
-        Inode::rablock = 0;
-        if(lbn <= 4)
-        {
+        //Inode::rablock = 0;
+        //if(lbn <= 4)
+        //{
             /* 
              * i_addr[0] - i_addr[5]为直接索引表。如果预读块对应物理块号可以从
              * 直接索引表中获得，则记录在Inode::rablock中。如果需要额外的I/O开销
              * 读入间接索引块，就显得不太值得了。漂亮！
              */
-            Inode::rablock = this->i_addr[lbn + 1];
-        }
+            //Inode::rablock = this->i_addr[lbn + 1];
+        //}
 
         return phyBlkno;
     }
@@ -333,11 +333,11 @@ int Inode::Bmap(int lbn)
             bufMgr.Brelse(pFirstBuf);
         }
         /* 找到预读块对应的物理盘块号，如果获取预读块号需要额外的一次for间接索引块的IO，不合算，放弃 */
-        Inode::rablock = 0;
-        if( index + 1 < Inode::ADDRESS_PER_INDEX_BLOCK)
-        {
-            Inode::rablock = iTable[index + 1];
-        }
+        //Inode::rablock = 0;
+        //if( index + 1 < Inode::ADDRESS_PER_INDEX_BLOCK)
+        //{
+            //Inode::rablock = iTable[index + 1];
+        //}
         return phyBlkno;
     }
 }
@@ -526,4 +526,31 @@ void Inode::Prele()
     {
         this->i_flag &= ~Inode::IWANT;
     }
+}
+
+DiskInode::DiskInode()
+{
+	/* 
+	 * 如果DiskInode没有构造函数，会发生如下较难察觉的错误：
+	 * DiskInode作为局部变量占据函数Stack Frame中的内存空间，但是
+	 * 这段空间没有被正确初始化，仍旧保留着先前栈内容，由于并不是
+	 * DiskInode所有字段都会被更新，将DiskInode写回到磁盘上时，可能
+	 * 将先前栈内容一同写回，导致写回结果出现莫名其妙的数据。
+	 */
+	this->d_mode = 0;
+	this->d_nlink = 0;
+	this->d_uid = -1;
+	this->d_gid = -1;
+	this->d_size = 0;
+	for(int i = 0; i < 10; i++)
+	{
+		this->d_addr[i] = 0;
+	}
+	this->d_atime = 0;
+	this->d_mtime = 0;
+}
+
+DiskInode::~DiskInode()
+{
+	//nothing to do here
 }
