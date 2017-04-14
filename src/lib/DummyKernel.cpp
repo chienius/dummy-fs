@@ -5,6 +5,7 @@
 
 DummyKernel DummyKernel::instance;
 FileManager g_FileManager;
+User g_User;
 
 DummyKernel::DummyKernel() {
 }
@@ -14,8 +15,7 @@ DummyKernel& DummyKernel::Instance() {
 }
 
 void DummyKernel::Initialize(FILE* fd) {
-    User user;
-    this->m_User = &user;
+    this->m_User = &g_User;
 
     this->m_BufferManager = &g_BufferManager;
     this->m_BufferManager->Initialize(fd);

@@ -38,11 +38,6 @@ void FileSystem::Update()
     SuperBlock* sb;
     Buf* pBuf;
 
-    /* 另一进程正在进行同步，则直接返回 */
-    if(this->updlock)
-    {
-        return;
-    }
 
     /* 设置Update()函数的互斥锁，防止其它进程重入 */
     this->updlock++;
@@ -79,7 +74,7 @@ void FileSystem::Update()
     }
 
     /* TODO 同步修改过的内存Inode到对应外存Inode */
-    //g_InodeTable.UpdateInodeTable();
+    g_InodeTable.UpdateInodeTable();
 
     /* 清除Update()函数锁 */
     this->updlock = 0;
@@ -172,14 +167,14 @@ Buf* FileSystem::Alloc(short dev)
     if(blkno<0) {
         return NULL;
     }
-
+    int bitno = blkno;
     blkno += FileSystem::DATA_ZONE_START_SECTOR;
 
     /* 普通情况下成功分配到一空闲磁盘块 */
     pBuf = this->m_BufferManager->GetBlk(dev, blkno);	/* 为该磁盘块申请缓存 */
     this->m_BufferManager->ClrBuf(pBuf);	/* 清空缓存中的数据 */
     sb->s_fmod = 1;	/* 设置SuperBlock被修改标志 */
-    SuperBlock::setBit(sb->s_db, blkno, 1);
+    SuperBlock::setBit(sb->s_db, bitno, 1);
 
     return pBuf;
 }

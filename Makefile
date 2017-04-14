@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-Iincludes
+CFLAGS=-Iinclude
 DESTDIR=build
 SRCDIR=src
 LIBDIR=$(SRCDIR)/lib
@@ -7,9 +7,12 @@ OBJECTS=$(DESTDIR)/BufferManager.o $(DESTDIR)/File.o $(DESTDIR)/FileSystem.o $(D
 SOURCES=$(LIBDIR)/BufferManager.cpp $(LIBDIR)/File.cpp $(LIBDIR)/FileSystem.cpp $(LIBDIR)/Inode.cpp $(LIBDIR)/SuperBlock.cpp $(LIBDIR)/User.cpp $(LIBDIR)/DummyKernel.cpp $(LIBDIR)/FileManager.cpp $(LIBDIR)/OpenFileManager.cpp $(LIBDIR)/Utility.cpp
 LD=ld
 
-.PHONY: clean
+.PHONY: clean DESTDIR
 
-all: $(DESTDIR)/Initialize $(DESTDIR)/TestProgram
+all: DESTDIR $(DESTDIR)/Initialize $(DESTDIR)/DummyFS
+
+DESTDIR:
+	mkdir -p $(DESTDIR)
 
 $(DESTDIR)/BufferManager.o: $(LIBDIR)/BufferManager.cpp
 	$(CC) $< -c -o $@ $(CFLAGS)
@@ -45,6 +48,9 @@ $(DESTDIR)/Initialize: $(OBJECTS) $(SRCDIR)/Initialize.cpp
 	$(CC) $^ -o $@ $(CFLAGS)
 
 $(DESTDIR)/TestProgram: $(OBJECTS) $(SRCDIR)/TestProgram.cpp
+	$(CC) $^ -o $@ $(CFLAGS)
+
+$(DESTDIR)/DummyFS: $(OBJECTS) $(SRCDIR)/CommandUtility.cpp $(SRCDIR)/main.cpp
 	$(CC) $^ -o $@ $(CFLAGS)
 
 clean:

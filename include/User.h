@@ -16,7 +16,7 @@ class User
         int u_error;
         /* 系统调用相关成员 */
         char* u_dirp;				/* 系统调用参数(一般用于Pathname)的指针 */
-
+    
         /* 文件系统相关成员 */
         Inode* u_cdir;		/* 指向当前目录的Inode指针 */
         Inode* u_pdir;		/* 指向父目录的Inode指针 */

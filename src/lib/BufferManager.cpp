@@ -165,7 +165,7 @@ void BufferManager::Bwrite(Buf *bp)
      * Copy data from bp->b_addr to the image
      */
     fseek(this->imgFd, bp->b_blkno*512, SEEK_SET);
-    fwrite(bp->b_addr, sizeof(char), BufferManager::BUFFER_SIZE, imgFd);
+    int writebyte = fwrite(bp->b_addr, sizeof(char), BufferManager::BUFFER_SIZE, imgFd);
     if(this->devtab.d_actf == NULL)
     {
         this->devtab.d_actf = bp;

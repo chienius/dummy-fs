@@ -158,7 +158,7 @@ Inode* InodeTable::IGet(short dev, int inumber)
 void InodeTable::IPut(Inode *pNode)
 {
     /* 当前进程为引用该内存Inode的唯一进程，且准备释放该内存Inode */
-    if(pNode->i_count == 1)
+    if(pNode->i_count <= 1)
     {
         /* 
          * 上锁，因为在整个释放过程中可能因为磁盘操作而使得该进程睡眠，

@@ -81,7 +81,9 @@ class FileManager
 
         void Ls(char* path);
 
-        /* 
+        bool IsDirEmpty(char* path);
+
+        /*
          * @comment 目录搜索，将路径转化为相应的Inode，
          * 返回上锁后的Inode
          */

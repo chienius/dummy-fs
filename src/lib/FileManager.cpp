@@ -43,7 +43,7 @@ int FileManager::Creat(char* path, unsigned int mode)
     Inode* pInode;
     User& u = DummyKernel::Instance().GetUser();
     unsigned int newACCMode = mode & (Inode::IRWXU|Inode::IRWXG|Inode::IRWXO);
-
+    
     u.u_dirp = path;
     /* 搜索目录的模式为1，表示创建；若父目录不可写，出错返回 */
     pInode = this->NameI(FileManager::NextChar, FileManager::CREATE);
@@ -104,7 +104,7 @@ void FileManager::Open1(Inode* pInode, int mode, int trf)
             if ( (pInode->i_mode & Inode::IFMT) == Inode::IFDIR )
             {
                 u.u_error = 1;
-                printf("Unable to write directory @FileManager::Open1");
+                printf("Unable to write directory @FileManager::Open1\n");
             }
         }
     }
@@ -248,11 +248,11 @@ void FileManager::Rdwr(int fd, char* buffer, int count, enum File::FileFlags mod
 
 
     /* 读写的模式不正确 */
-    if ( (pFile->f_flag & mode) == 0 )
-    {
-        u.u_error = 1;
-        return;
-    }
+//    if ( (pFile->f_flag & mode) == 0 )
+//    {
+//        u.u_error = 1;
+//        return;
+//    }
 
     u.u_IOParam.m_Base = (unsigned char *)buffer;	/* 目标缓冲区首址 */
     u.u_IOParam.m_Count = count;		/* 要求读/写的字节数 */
@@ -285,67 +285,67 @@ void FileManager::Ls(char* path) {
     Inode* pInode;
     User& u = DummyKernel::Instance().GetUser();
     u.u_dirp = path;
+    
     int dirEntryCount = 0;
     BufferManager& bufMgr = DummyKernel::Instance().GetBufferManager();
     Buf* pBuf;
-
+    
     pInode = this->NameI(FileManager::NextChar, FileManager::OPEN);
-    //if(NULL == pInode) {
-        //printf("[Path Not Found]");
-        //return;
-    //}
+    if(NULL == pInode) {
+        printf("[Path Not Found]\n");
+        return;
+    }
 
 
-    //[> 对于u.u_dbuf[]中的路径名分量，逐个搜寻匹配的目录项 <]
-    //u.u_IOParam.m_Offset = 0;
-    //[> 设置为目录项个数 ，含空白的目录项<]
-    //u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
-    //pBuf = NULL;
-    //while(true) {
-        //[> 对目录项已经搜索完毕 <]
-        //if ( 0 == u.u_IOParam.m_Count )
-        //{
-            //if ( NULL != pBuf )
-            //{
-                //bufMgr.Brelse(pBuf);
-            //}
+    /* 对于u.u_dbuf[]中的路径名分量，逐个搜寻匹配的目录项 */
+    u.u_IOParam.m_Offset = 0;
+    /* 设置为目录项个数 ，含空白的目录项*/
+    u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
+    pBuf = NULL;
+    while(true) {
+        /* 对目录项已经搜索完毕 */
+        if ( 0 == u.u_IOParam.m_Count )
+        {
+            if ( NULL != pBuf )
+            {
+                bufMgr.Brelse(pBuf);
+            }
 
-            //printf("%d entries in all.", dirEntryCount);
-            //break;
-        //}
+            printf("%d entries in all.\n", dirEntryCount);
+            break;
+        }
 
-        //[> 已读完目录文件的当前盘块，需要读入下一目录项数据盘块 <]
-        //if ( 0 == u.u_IOParam.m_Offset % Inode::BLOCK_SIZE )
-        //{
-            //if ( NULL != pBuf )
-            //{
-                //bufMgr.Brelse(pBuf);
-            //}
-            //[> 计算要读的物理盘块号 <]
-            //int phyBlkno = pInode->Bmap(u.u_IOParam.m_Offset / Inode::BLOCK_SIZE );
-            //pBuf = bufMgr.Bread(pInode->i_dev, phyBlkno );
-        //}
+        /* 已读完目录文件的当前盘块，需要读入下一目录项数据盘块 */
+        if ( 0 == u.u_IOParam.m_Offset % Inode::BLOCK_SIZE )
+        {
+            if ( NULL != pBuf )
+            {
+                bufMgr.Brelse(pBuf);
+            }
+            /* 计算要读的物理盘块号 */
+            int phyBlkno = pInode->Bmap(u.u_IOParam.m_Offset / Inode::BLOCK_SIZE );
+            pBuf = bufMgr.Bread(pInode->i_dev, phyBlkno );
+        }
 
-        //[> 没有读完当前目录项盘块，则读取下一目录项至u.u_dent <]
-        //int* src = (int *)(pBuf->b_addr + (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE));
-        //Utility::DWordCopy( src, (int *)&u.u_dent, sizeof(DirectoryEntry)/sizeof(int) );
+        /* 没有读完当前目录项盘块，则读取下一目录项至u.u_dent */
+        int* src = (int *)(pBuf->b_addr + (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE));
+        Utility::DWordCopy( src, (int *)&u.u_dent, sizeof(DirectoryEntry)/sizeof(int) );
 
-        //u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
-        //u.u_IOParam.m_Count--;
+        u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
+        u.u_IOParam.m_Count--;
 
-        //[> 如果是空闲目录项，记录该项位于目录文件中偏移量 <]
-        //if ( 0 == u.u_dent.m_ino )
-        //{
-            //[> 跳过空闲目录项，继续搜索下一目录项 <]
-            //continue;
-        //}
+        if ( 0 == u.u_dent.m_ino )
+        {
+            /* 跳过空闲目录项，继续搜索下一目录项 */
+            continue;
+        }
 
-        //dirEntryCount++;
-        //printf("%s\t\t%d", u.u_dent.m_name, u.u_dent.m_ino);
-    //}
+        dirEntryCount++;
+        printf("%s\t\t%d\n", u.u_dent.m_name, u.u_dent.m_ino);
+    }
 
-    ////pInode->Prele();
-    //this->m_InodeTable->IPut(pInode);
+    //pInode->Prele();
+    this->m_InodeTable->IPut(pInode);
 }
 
 /* 返回NULL表示目录搜索失败，否则是根指针，指向文件的内存打开i节点 ，上锁的内存i节点  */
@@ -376,6 +376,7 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
     while ( '/' == curchar )
     {
         curchar = (*func)();
+        //putchar(curchar);
     }
     /* 如果试图更改和删除当前目录文件则出错 */
     if ( '\0' == curchar && mode != FileManager::OPEN )
@@ -384,6 +385,7 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
         goto out;
     }
 
+    //printf("%c", curchar);
     /* 外层循环每次处理pathname中一段路径分量 */
     while (true)
     {
@@ -402,6 +404,7 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
         /* 如果要进行搜索的不是目录文件，释放相关Inode资源则退出 */
         if ( (pInode->i_mode & Inode::IFMT) != Inode::IFDIR )
         {
+            printf("Not a directory. @FileManager::NameI\n");
             u.u_error = 1;
             break;	/* goto out; */
         }
@@ -474,6 +477,7 @@ Inode* FileManager::NameI( char (*func)(), enum DirectorySearchMode mode )
                 }
 
                 /* 目录项搜索完毕而没有找到匹配项，释放相关Inode资源，并推出 */
+                printf("Not found. @FileManager::NameI\n");
                 u.u_error = 1;
                 goto out;
             }
@@ -686,10 +690,74 @@ void FileManager::UnLink(char* path)
     this->m_InodeTable->IPut(pInode);
 }
 
+bool FileManager::IsDirEmpty(char* path) {
+    FileSystem& fileSys = DummyKernel::Instance().GetFileSystem();
+    User& u = DummyKernel::Instance().GetUser();
+    u.u_dirp = path;
+    Inode* pInode = this->NameI(FileManager::NextChar, FileManager::OPEN);
+    BufferManager& bufMgr = DummyKernel::Instance().GetBufferManager();
+    int r = 0;
+
+    
+    if(pInode == NULL) {
+        return false;
+    }
+    
+    if((pInode->i_mode & Inode::IFMT)!=Inode::IFDIR ) {
+        this->m_InodeTable->IPut(pInode);
+        printf("Not a directory. \n");
+        return false;
+    }
+    
+    const int EMPTY_DIR_SIZE = 0;
+    int dir_entry_count = 0;
+    
+    /* 内层循环部分对于u.u_dbuf[]中的路径名分量，逐个搜寻匹配的目录项 */
+    u.u_IOParam.m_Offset = 0;
+    /* 设置为目录项个数 ，含空白的目录项*/
+    u.u_IOParam.m_Count = pInode->i_size / (DirectoryEntry::DIRSIZ + 4);
+    int freeEntryOffset = 0;
+    Buf* pBuf = NULL;
+    
+    while(true) {
+        if( 0 == u.u_IOParam.m_Count) {
+            if(NULL!=pBuf) {
+                bufMgr.Brelse(pBuf);
+            }
+            this->m_InodeTable->IPut(pInode);
+            return !r;
+        }
+        
+        if ( 0 == u.u_IOParam.m_Offset % Inode::BLOCK_SIZE )
+        {
+            if ( NULL != pBuf )
+            {
+                bufMgr.Brelse(pBuf);
+            }
+            /* 计算要读的物理盘块号 */
+            int phyBlkno = pInode->Bmap(u.u_IOParam.m_Offset / Inode::BLOCK_SIZE );
+            pBuf = bufMgr.Bread(pInode->i_dev, phyBlkno );
+        }
+        int* src = (int *)(pBuf->b_addr + (u.u_IOParam.m_Offset % Inode::BLOCK_SIZE));
+        Utility::DWordCopy( src, (int *)&u.u_dent, sizeof(DirectoryEntry)/sizeof(int) );
+        
+        u.u_IOParam.m_Offset += (DirectoryEntry::DIRSIZ + 4);
+        u.u_IOParam.m_Count--;
+        
+        /* 如果是空闲目录项，记录该项位于目录文件中偏移量 */
+        if ( 0 == u.u_dent.m_ino )
+        {
+            /* 跳过空闲目录项，继续比较下一目录项 */
+            continue;
+        }
+        
+        r++;
+    }
+}
+
 /*==========================class DirectoryEntry===============================*/
 DirectoryEntry::DirectoryEntry()
 {
     this->m_ino = 0;
     this->m_name[0] = '\0';
 }
-
